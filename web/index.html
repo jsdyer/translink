@@ -6,6 +6,8 @@
   <meta name="description" content="{{DESCRIPTION}}">
   <title>{{TITLE}} · CoolCode</title>
   <link rel="stylesheet" href="./style.css">
+  <link rel="stylesheet" href="./vendor/maplibre-gl.css">
+  <script src="./vendor/maplibre-gl.js"></script>
   <script type="module" src="./app.mjs"></script>
   {{VISIT_COUNTER}}
 </head>
@@ -38,10 +40,10 @@
         <div><dt>Cancelled trips</dt><dd id="stat-cancel">—</dd></div>
       </dl>
       <div class="map-head">
-        <p class="note">Dots are vehicles in the selected capture. The line is the saved route shape, not a live trace.</p>
+        <p class="note">Dots are vehicles in this capture. The coloured line is the saved route, not a live trace. Drag the map to see the streets around them.</p>
         <button id="frame" type="button">Whole region</button>
       </div>
-      <div class="map-frame"><svg id="map" role="img" aria-label="Vehicle positions for the selected route"></svg></div>
+      <div class="map-frame"><div id="map" role="region" aria-label="Street map of vehicle positions for the selected route"></div></div>
       <div id="tracks"></div>
       <div class="scroll">
         <table>
@@ -66,7 +68,7 @@
         </table>
       </div>
     </section>
-    <aside aria-label="Privacy"><strong>The page stays in this tab.</strong> Choosing a route does not leave the browser. The API key is used only while a snapshot is collected, and it is not part of this page.</aside>
+    <aside aria-label="Privacy"><strong>Choosing a route stays in this tab.</strong> The street map is the exception: it loads tiles from OpenFreeMap, which draws OpenStreetMap. The API key is used only while a snapshot is collected, and it is not part of this page.</aside>
     <noscript><p>This tool needs JavaScript to read the saved captures. The source is linked above.</p></noscript>
   </main>
   <footer>

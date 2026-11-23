@@ -10,5 +10,6 @@
     "positions": "https://gtfsapi.translink.ca/v3/gtfsposition",
     "trips": "https://gtfsapi.translink.ca/v3/gtfsrealtime",
     "alerts": "https://gtfsapi.translink.ca/v3/gtfsalerts"
-  }
+  },
+  "mapStyle": "https://tiles.openfreemap.org/styles/positron"
 }

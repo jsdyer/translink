@@ -1,19 +1,8 @@
 import { boundsFor, compareCaptures, formatDelay, formatMetres, formatPacific, inspectRoute, sortLabels } from "./model.mjs";
 
-const ANCHORS = [
-  ["Waterfront", 49.2859, -123.1117],
-  ["UBC", 49.2665, -123.2496],
-  ["Metrotown", 49.2256, -123.0036],
-  ["Lougheed", 49.2483, -122.8969],
-  ["Surrey Central", 49.1897, -122.8479],
-  ["Richmond", 49.1681, -123.1364],
-  ["Phibbs", 49.3095, -123.0253],
-  ["Maple Ridge", 49.219, -122.599],
-  ["Lonsdale", 49.3101, -123.0828],
-];
-const NS = "http://www.w3.org/2000/svg";
 const finding = document.querySelector("#finding");
 const state = { captures: new Map(), frame: "route", query: "99" };
+const EMPTY = { type: "FeatureCollection", features: [] };
 
 function url(path) {
   return new URL(path, import.meta.url);
@@ -70,75 +59,123 @@ function renderChips(labels) {
   }
 }
 
+function routeFeatures(shapes) {
+  const features = [];
+  for (const shape of Object.values(shapes || {})) {
+    if (!Array.isArray(shape) || shape.length < 2) continue;
+    features.push({
+      type: "Feature",
+      properties: {},
+      geometry: { type: "LineString", coordinates: shape.map(([lat, lon]) => [lon, lat]) },
+    });
+  }
+  return { type: "FeatureCollection", features };
+}
+
+function busFeatures(vehicles, selectedIds, color) {
+  return {
+    type: "FeatureCollection",
+    features: (vehicles || []).filter((vehicle) => Number.isFinite(vehicle.lat) && Number.isFinite(vehicle.lon)).map((vehicle) => ({
+      type: "Feature",
+      properties: {
+        on: selectedIds.has(vehicle.id) ? 1 : 0,
+        color,
+        id: vehicle.id || "",
+        delay: formatDelay(vehicle.delay, state.config.onTimeSeconds),
+      },
+      geometry: { type: "Point", coordinates: [vehicle.lon, vehicle.lat] },
+    })),
+  };
+}
+
+function paintMap() {
+  const map = state.map;
+  const result = state.mapResult;
+  if (!map || !state.mapReady || !result) return;
+  const selected = result.vehicles || [];
+  const selectedIds = new Set(selected.map((vehicle) => vehicle.id));
+  const color = colorOf(result.route?.color);
+  const shown = state.frame === "region" ? state.mapVehicles : selected;
+  map.getSource("route").setData(routeFeatures(result.route?.shapes));
+  map.getSource("buses").setData(busFeatures(shown, selectedIds, color));
+  map.setPaintProperty("route-line", "line-color", color);
+  const focus = state.frame === "region"
+    ? boundsFor((state.mapVehicles || []).map((vehicle) => [vehicle.lat, vehicle.lon]), "region")
+    : boundsFor([
+      ...selected.map((vehicle) => [vehicle.lat, vehicle.lon]),
+      ...Object.values(result.route?.shapes || {}).flat(),
+    ], "route");
+  map.resize();
+  map.fitBounds([[focus.west, focus.south], [focus.east, focus.north]], { padding: 40, animate: false, maxZoom: 14.5 });
+}
+
+function ensureMap() {
+  if (state.map || state.mapFailed) return;
+  const holder = document.querySelector("#map");
+  if (!window.maplibregl) {
+    state.mapFailed = true;
+    holder.textContent = "The street map did not load.";
+    return;
+  }
+  try {
+    const map = new window.maplibregl.Map({
+      container: holder,
+      style: state.config.mapStyle || "https://tiles.openfreemap.org/styles/positron",
+      center: [-123.05, 49.25],
+      zoom: 10,
+      scrollZoom: false,
+      attributionControl: true,
+    });
+    map.addControl(new window.maplibregl.NavigationControl({ showCompass: false }), "top-right");
+    map.on("load", () => {
+      map.addSource("route", { type: "geojson", data: EMPTY });
+      map.addSource("buses", { type: "geojson", data: EMPTY });
+      const before = (map.getStyle().layers || []).find((layer) => layer.type === "symbol");
+      map.addLayer({
+        id: "route-line",
+        type: "line",
+        source: "route",
+        paint: { "line-color": "#147c73", "line-width": 5, "line-opacity": 0.92 },
+        layout: { "line-cap": "round", "line-join": "round" },
+      }, before && before.id);
+      map.addLayer({
+        id: "buses",
+        type: "circle",
+        source: "buses",
+        paint: {
+          "circle-radius": ["case", ["==", ["to-number", ["get", "on"]], 1], 7, 3.5],
+          "circle-color": ["case", ["==", ["to-number", ["get", "on"]], 1], ["coalesce", ["get", "color"], "#147c73"], "#60746c"],
+          "circle-stroke-width": ["case", ["==", ["to-number", ["get", "on"]], 1], 1.5, 0],
+          "circle-stroke-color": "#1b2826",
+        },
+      });
+      map.on("click", "buses", (event) => {
+        const feature = event.features && event.features[0];
+        if (!feature) return;
+        const id = feature.properties.id || "Vehicle";
+        const delay = feature.properties.delay || "";
+        new window.maplibregl.Popup({ closeButton: true, maxWidth: "240px" })
+          .setLngLat(event.lngLat)
+          .setText(delay ? `${id} · ${delay}` : id)
+          .addTo(map);
+      });
+      map.on("mouseenter", "buses", () => { map.getCanvas().style.cursor = "pointer"; });
+      map.on("mouseleave", "buses", () => { map.getCanvas().style.cursor = ""; });
+      state.mapReady = true;
+      paintMap();
+    });
+    state.map = map;
+  } catch (error) {
+    state.mapFailed = true;
+    holder.textContent = "The street map did not start in this browser.";
+  }
+}
+
 function drawMap(result, allVehicles) {
-  const svg = document.querySelector("#map");
-  clear(svg);
-  const points = [];
-  const line = [];
-  if (result.route?.shapes) {
-    for (const shape of Object.values(result.route.shapes)) line.push(...shape);
-  }
-  for (const vehicle of result.vehicles || []) points.push([vehicle.lat, vehicle.lon]);
-  const fitted = state.frame === "region" ? boundsFor(allVehicles.map((item) => [item.lat, item.lon]), "region") : boundsFor([...points, ...line], "route");
-  const width = 1000;
-  const height = 620;
-  svg.setAttribute("viewBox", `0 0 ${width} ${height}`);
-  const project = (lat, lon) => [
-    ((lon - fitted.west) / (fitted.east - fitted.west)) * width,
-    ((fitted.north - lat) / (fitted.north - fitted.south)) * height,
-  ];
-  const backdrop = document.createElementNS(NS, "rect");
-  backdrop.setAttribute("width", String(width));
-  backdrop.setAttribute("height", String(height));
-  backdrop.setAttribute("fill", "#e7efe8");
-  svg.append(backdrop);
-  if (result.route?.shapes) {
-    for (const shape of Object.values(result.route.shapes)) {
-      const poly = document.createElementNS(NS, "polyline");
-      poly.setAttribute("points", shape.map(([lat, lon]) => project(lat, lon).join(",")).join(" "));
-      poly.setAttribute("fill", "none");
-      poly.setAttribute("stroke", colorOf(result.route.color));
-      poly.setAttribute("stroke-width", "4");
-      poly.setAttribute("stroke-linejoin", "round");
-      poly.setAttribute("stroke-linecap", "round");
-      svg.append(poly);
-    }
-  }
-  for (const [name, lat, lon] of ANCHORS) {
-    if (lat < fitted.south || lat > fitted.north || lon < fitted.west || lon > fitted.east) continue;
-    const [x, y] = project(lat, lon);
-    const label = document.createElementNS(NS, "text");
-    label.setAttribute("x", String(x + 6));
-    label.setAttribute("y", String(y - 6));
-    label.setAttribute("fill", "#4d5e59");
-    label.setAttribute("font-size", "18");
-    label.textContent = name;
-    svg.append(label);
-  }
-  const seen = new Set((result.vehicles || []).map((vehicle) => vehicle.id));
-  if (state.frame === "region") {
-    for (const vehicle of allVehicles) {
-      if (seen.has(vehicle.id)) continue;
-      const dot = document.createElementNS(NS, "circle");
-      const [x, y] = project(vehicle.lat, vehicle.lon);
-      dot.setAttribute("cx", String(x));
-      dot.setAttribute("cy", String(y));
-      dot.setAttribute("r", "3.5");
-      dot.setAttribute("fill", "#8aa097");
-      svg.append(dot);
-    }
-  }
-  for (const vehicle of result.vehicles || []) {
-    const dot = document.createElementNS(NS, "circle");
-    const [x, y] = project(vehicle.lat, vehicle.lon);
-    dot.setAttribute("cx", String(x));
-    dot.setAttribute("cy", String(y));
-    dot.setAttribute("r", "7");
-    dot.setAttribute("fill", colorOf(result.route?.color));
-    dot.setAttribute("stroke", "#1b2826");
-    dot.setAttribute("stroke-width", "1.5");
-    svg.append(dot);
-  }
+  state.mapResult = result;
+  state.mapVehicles = allVehicles;
+  ensureMap();
+  if (state.mapReady) paintMap();
 }
 
 function renderTracks(result) {
@@ -336,6 +373,9 @@ document.querySelector("#frame").addEventListener("click", () => {
 document.querySelector("#route").addEventListener("change", () => {
   const matched = state.query.trim();
   if (matched) history.replaceState(null, "", `#${encodeURIComponent(matched)}`);
+});
+window.addEventListener("resize", () => {
+  if (state.map) state.map.resize();
 });
 
 init().catch((error) => text(finding, error.message || "The saved captures did not load."));

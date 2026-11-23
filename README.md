@@ -14,7 +14,7 @@ The sheet reads one saved capture at a time. A full capture is every vehicle tha
 
 ## Sources
 
-[GTFS-Realtime v3](https://www.translink.ca/about-us/doing-business-with-translink/app-developer-resources/gtfs/gtfs-realtime) for positions, trip updates and alerts. [GTFS static](https://gtfs-static.translink.ca/gtfs/google_transit.zip) for route names and lines. The RTTI API was retired on 3 December 2024 and is not called.
+[GTFS-Realtime v3](https://www.translink.ca/about-us/doing-business-with-translink/app-developer-resources/gtfs/gtfs-realtime) for positions, trip updates and alerts. [GTFS static](https://gtfs-static.translink.ca/gtfs/google_transit.zip) for route names and lines. Streets are [OpenFreeMap](https://openfreemap.org/) Positron, from OpenStreetMap, drawn with MapLibre GL 5.15.0 in `web/vendor/` (BSD-3-Clause). The RTTI API was retired on 3 December 2024 and is not called.
 
 Each fleet refresh makes three realtime requests. An hourly schedule stays well under the 1,000 requests per day on a TransLink developer key. The static zip does not use the key. The key is read from `TRANSLINK_API_KEY` and is not written into the page, the captures, or the log.
 
@@ -22,7 +22,7 @@ Route and arrival data used in this product or service is provided by permission
 
 ## Expand or customize
 
-Defaults live in [web/config.json](web/config.json). `watchlist` is the set of route lines to draw. `retain` is how many captures to keep. `bunchMeters` is the gap at which the sheet says two vehicles are bunched. `lineMetres` is how close a ping must be to the saved line before that gap is measured along it. `staleSeconds` and `shapePoints` are the other tunables.
+Defaults live in [web/config.json](web/config.json). `watchlist` is the set of route lines to draw. `retain` is how many captures to keep. `bunchMeters` is the gap at which the sheet says two vehicles are bunched. `lineMetres` is how close a ping must be to the saved line before that gap is measured along it. `mapStyle` is the street-map style URL. `staleSeconds` and `shapePoints` are the other tunables.
 
 To draw the 410 as well as the routes already listed, add it and refresh the network. Visitors can already type 410 before that change; the line appears after the network file includes it.
 

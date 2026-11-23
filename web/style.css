@@ -40,7 +40,12 @@ button[aria-pressed="true"] { background: #cfe3d4; border-color: var(--accent); 
 .stats dd { margin: .15rem 0 0; font-variant-numeric: tabular-nums; font-size: 1.35rem; font-weight: 700; }
 .map-head { display: flex; justify-content: space-between; gap: .8rem; align-items: center; flex-wrap: wrap; }
 .map-frame { background: #e7efe8; border: 1px solid var(--line); border-radius: 6px; overflow: hidden; }
-#map { display: block; width: 100%; height: auto; min-height: 280px; }
+#map { display: block; width: 100%; height: clamp(320px, 52vw, 540px); }
+.maplibregl-ctrl-attrib { font-size: .72rem; background: rgba(250, 248, 240, .9); }
+.maplibregl-ctrl-attrib a { color: #14575d; }
+.maplibregl-ctrl-group { border-color: #c9c3ae; }
+.maplibregl-ctrl-group button { width: 40px; height: 40px; }
+.maplibregl-popup-content { font: .92rem/1.4 "Segoe UI", system-ui, sans-serif; color: var(--ink); background: var(--surface); }
 .track { margin: .8rem 0; }
 .track p { margin: 0 0 .25rem; font-size: .9rem; }
 .rail { position: relative; height: 18px; background: #ddd6c2; border-radius: 99px; }
