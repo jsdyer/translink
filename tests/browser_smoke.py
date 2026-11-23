@@ -38,7 +38,8 @@ def main():
                 page.locator("#route").fill('<img src=x onerror="alert(1)">')
                 page.wait_for_function("document.querySelector('#finding').textContent.includes('No saved route')")
                 assert page.locator("img").count() == 0
-                assert "<img" not in page.locator("#finding").inner_text()
+                # textContent escapes the typed markup. A real tag would still contain <img here.
+                assert "<img" not in page.locator("#finding").inner_html()
                 page.locator("#route").fill("99")
                 page.screenshot(path=str(screenshots / "desktop.png"), full_page=True)
                 page.set_viewport_size({"width": 390, "height": 844})
