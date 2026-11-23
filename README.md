@@ -10,7 +10,7 @@ Pick a capture, then a route. The closest pair is measured along the saved line 
 
 The sheet reads one saved capture at a time. A full capture is every vehicle that reported a position in that GTFS-Realtime reading. An illustrated capture is only an example, and it is labelled as such. Delays come from trip updates joined by trip id. A cancellation is counted even when that trip has no position. A position older than `staleSeconds` in `web/config.json` is marked stale. The median uses the vehicles you can see on the selected route, not every scheduled trip.
 
-“Along the saved line” means the distance between consecutive vehicles after each one is dropped onto the simplified GTFS shape. It is not a prediction of the next stop. Bird-distance is used when that route has no saved line, or when a position sits more than 1.2 km off every saved line. The watchlist does not limit which route you can type. It only chooses which lines are kept in the network file.
+“Along the saved line” means the distance between consecutive vehicles after each one is dropped onto the simplified GTFS shape. It is not a prediction of the next stop. A position more than `lineMetres` off that shape (80 m unless you change it) is kept on the map, but it is not used to measure an along-route gap. Bird-distance is used when that route has no saved line, when a position sits more than 1.2 km off every saved line, or when the shape would claim a smaller gap than the map shows. The watchlist does not limit which route you can type. It only chooses which lines are kept in the network file.
 
 ## Sources
 
@@ -22,7 +22,7 @@ Route and arrival data used in this product or service is provided by permission
 
 ## Expand or customize
 
-Defaults live in [web/config.json](web/config.json). `watchlist` is the set of route lines to draw. `retain` is how many captures to keep. `bunchMeters` is the gap at which the sheet says two vehicles are bunched. `staleSeconds` and `shapePoints` are the other tunables.
+Defaults live in [web/config.json](web/config.json). `watchlist` is the set of route lines to draw. `retain` is how many captures to keep. `bunchMeters` is the gap at which the sheet says two vehicles are bunched. `lineMetres` is how close a ping must be to the saved line before that gap is measured along it. `staleSeconds` and `shapePoints` are the other tunables.
 
 To draw the 410 as well as the routes already listed, add it and refresh the network. Visitors can already type 410 before that change; the line appears after the network file includes it.
 

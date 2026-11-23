@@ -65,6 +65,28 @@ test('places buses along a saved line and names a bunch', () => {
   assert.equal(formatDelay(median([120, 360]), 60), '4 min late');
 });
 
+test('a bus sitting off the saved line is not stacked onto the buses on it', () => {
+  const broadway = Array.from({ length: 11 }, (_, index) => [49, -123.1 + index * 0.01]);
+  const localRoutes = [
+    { id: '6641', label: '99', name: 'Broadway B-Line', dir: { '1': 'UBC Exchange' }, shapes: { '1': broadway } },
+  ];
+  const capture = {
+    coverage: 'full',
+    vehicles: [
+      { id: 'on-a', routeId: '6641', direction: '1', lat: 49, lon: -123.05 },
+      { id: 'on-b', routeId: '6641', direction: '1', lat: 49, lon: -123.04 },
+      { id: 'off', routeId: '6641', direction: '1', lat: 49.001, lon: -123.05 },
+    ],
+    summary: {},
+    canceled: [],
+    alerts: [],
+  };
+  const result = inspectRoute({ capture, routes: localRoutes, query: '99', limits });
+  assert.ok(result.closest.metres > 100);
+  assert.match(result.sentence, /along the saved line/);
+  assert.doesNotMatch(result.sentence, /\b[01] m apart/);
+});
+
 test('full captures count a missing route as zero and partial captures do not', () => {
   const labelFor = (id) => ({ '6641': '99', '6728': '410' })[id] || id;
   const older = { coverage: 'full', vehicles: [{ routeId: '6641' }, { routeId: '6641' }, { routeId: '6728' }] };

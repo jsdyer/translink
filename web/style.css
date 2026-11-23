@@ -50,7 +50,8 @@ button[aria-pressed="true"] { background: #cfe3d4; border-color: var(--accent); 
 table { width: 100%; border-collapse: collapse; font-variant-numeric: tabular-nums; }
 caption { text-align: left; font-weight: 700; padding: .4rem 0; }
 th, td { text-align: left; padding: .45rem .5rem; border-bottom: 1px solid var(--line); white-space: nowrap; }
-th { font-size: .82rem; color: var(--muted); }
+table.no-speed th:nth-child(6),
+table.no-speed td:nth-child(6) { display: none; }
 .late { color: var(--amber); font-weight: 700; }
 .stale { color: var(--amber); }
 .note, aside, footer { color: var(--muted); }

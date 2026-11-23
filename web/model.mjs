@@ -134,6 +134,10 @@ export function boundsFor(points, mode = "route") {
   return { south: nextSouth, north: nextNorth, west: nextWest, east: nextEast };
 }
 
+function lineLimit(limits) {
+  return Number.isFinite(limits?.lineMetres) ? limits.lineMetres : 80;
+}
+
 function canceledCount(capture, routeId) {
   const summary = capture.summary && capture.summary[routeId];
   if (summary && Number.isFinite(summary.canceled)) return summary.canceled;
@@ -175,6 +179,7 @@ export function inspectRoute({ capture, routes, query, limits }) {
   const vehicles = capture.vehicles.filter((vehicle) => vehicle.routeId === route.id);
   const shapes = route.shapes || null;
   const lineSaved = Boolean(shapes && Object.keys(shapes).length);
+  const lineMetres = lineLimit(limits);
   const placed = vehicles.map((vehicle) => ({ ...vehicle, place: place(vehicle, shapes) }));
   const byDirection = new Map();
   for (const vehicle of placed) {
@@ -186,10 +191,10 @@ export function inspectRoute({ capture, routes, query, limits }) {
   let closest = null;
   for (const [key, group] of byDirection) {
     const named = route.dir && route.dir[key] ? route.dir[key] : key === "unknown" ? "unknown direction" : `direction ${key}`;
-    const onLine = group.filter((vehicle) => vehicle.place);
-    const along = onLine.length >= 2;
-    const ordered = along ? [...onLine].sort((a, b) => a.place.along - b.place.along) : [...group];
-    const trail = along ? group.filter((vehicle) => !vehicle.place) : [];
+    const snug = group.filter((vehicle) => vehicle.place && vehicle.place.offset <= lineMetres);
+    const along = snug.length >= 2;
+    const ordered = along ? [...snug].sort((a, b) => a.place.along - b.place.along) : [...group];
+    const trail = along ? group.filter((vehicle) => !snug.includes(vehicle)) : [];
     if (!along && group.length >= 2) {
       let best = null;
       for (let i = 0; i < group.length; i += 1) {
@@ -203,8 +208,14 @@ export function inspectRoute({ capture, routes, query, limits }) {
     const buses = ordered.map((vehicle, index) => {
       const next = ordered[index + 1];
       let gap = null;
-      if (next && along) gap = next.place.along - vehicle.place.along;
-      if (gap != null && (!closest || gap < closest.metres)) closest = { metres: gap, direction: named, along: true };
+      if (next && along) {
+        const alongGap = next.place.along - vehicle.place.along;
+        const bird = haversine([vehicle.lat, vehicle.lon], [next.lat, next.lon]);
+        // A simplified shape can stack two buses that are still a block apart.
+        const faithful = alongGap + 25 >= bird;
+        gap = faithful ? Math.max(alongGap, bird) : bird;
+        if (!closest || gap < closest.metres) closest = { metres: gap, direction: named, along: faithful };
+      }
       return {
         id: vehicle.id,
         fraction: along && vehicle.place.length ? vehicle.place.along / vehicle.place.length : null,
@@ -223,7 +234,7 @@ export function inspectRoute({ capture, routes, query, limits }) {
       id: key,
       name: named,
       along,
-      length: along ? onLine[0].place.length : null,
+      length: along ? snug[0].place.length : null,
       buses: [...buses, ...trail.map((vehicle) => ({
         id: vehicle.id,
         fraction: null,

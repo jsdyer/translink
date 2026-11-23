@@ -152,7 +152,8 @@ function renderTracks(result) {
     title.textContent = direction.name;
     const rail = document.createElement("div");
     rail.className = "rail";
-    const closest = result.closest && result.closest.along ? result.closest.metres : null;
+    const bunch = Number.isFinite(state.config.bunchMeters) ? state.config.bunchMeters : 500;
+    const closest = result.closest && result.closest.along && result.closest.metres <= bunch ? result.closest.metres : null;
     for (const bus of direction.buses) {
       if (bus.fraction == null) continue;
       const pip = document.createElement("span");
@@ -177,6 +178,8 @@ function renderTable(result) {
   const body = document.querySelector("#rows");
   clear(body);
   const buses = (result.directions || []).flatMap((direction) => direction.buses.map((bus) => ({ ...bus, towards: direction.name })));
+  const showSpeed = buses.some((bus) => bus.kph != null);
+  body.closest("table").classList.toggle("no-speed", !showSpeed);
   for (const bus of buses) {
     const row = document.createElement("tr");
     addCell(row, bus.id);
@@ -184,7 +187,8 @@ function renderTable(result) {
     addCell(row, bus.along == null ? "—" : formatMetres(bus.along));
     addCell(row, bus.gap == null ? "—" : formatMetres(bus.gap));
     addCell(row, formatDelay(bus.delay, state.config.onTimeSeconds), Number.isFinite(bus.delay) && bus.delay >= state.config.onTimeSeconds ? "late" : "");
-    addCell(row, bus.kph == null ? "—" : `${bus.kph} km/h`);
+    if (showSpeed) addCell(row, `${bus.kph} km/h`);
+    else addCell(row, "—");
     addCell(row, bus.age == null ? "—" : `${bus.age} s`, Number.isFinite(bus.age) && bus.age > state.config.staleSeconds ? "stale" : "");
     body.append(row);
   }

@@ -2,6 +2,7 @@
   "watchlist": ["99", "R1", "R2", "R3", "R4", "R5", "R6", "9", "14", "16", "19", "25", "49", "100", "250", "351", "555", "701", "N9", "Expo Line", "Millennium Line", "Canada Line", "SeaBus", "WCE"],
   "retain": 36,
   "bunchMeters": 500,
+  "lineMetres": 80,
   "staleSeconds": 180,
   "onTimeSeconds": 60,
   "shapePoints": 70,
