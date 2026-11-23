@@ -1,3 +1,11 @@
+# Fleet Sheet
+
+This repository is the Fleet Sheet CoolCode tool for TransLink GTFS-Realtime captures.
+The API key is `TRANSLINK_API_KEY` in the environment or GitHub variable. Never write it into `web/`, commits, or logs.
+`scripts/refresh_network.py` updates route names from the public GTFS zip.
+`scripts/refresh.py` appends one capture under `web/data/captures/` and prunes to `web/config.json` `retain`.
+Failed refreshes must not replace `web/data`.
+
 # CoolCode browser tool conventions
 
 - Keep app source in `web/`, build code in `scripts/`, and meaningful tests in `tests/`.

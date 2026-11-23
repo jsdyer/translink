@@ -1,16 +1,31 @@
 {
-  "id": "coolcode-tool-template",
-  "title": "CoolCode Tool Starter",
-  "description": "A browser-only example that trims lines and removes exact duplicates.",
-  "category": "security",
-  "tags": ["text", "lines", "duplicates"],
-  "icon": "scan-search",
-  "url": "/coolcode-tool-template/",
-  "source": "https://github.com/jsdyer/coolcode-tool-template",
+  "id": "translink",
+  "title": "Fleet Sheet",
+  "description": "See which TransLink vehicles are out, where a route is bunched, and what changed since the previous capture.",
+  "category": "places",
+  "tags": ["TransLink", "Vancouver", "bus", "SkyTrain", "realtime", "bunching"],
+  "icon": "route",
+  "url": "/translink/",
+  "source": "https://github.com/jsdyer/translink",
   "hosting": "project",
   "access": "browser",
   "data_info": {
-    "mode": "local",
-    "detail": "The browser reads the text you paste and compares its lines."
+    "mode": "snapshot",
+    "detail": "TransLink’s GTFS-Realtime feeds supply vehicle positions, trip delays and service alerts for each saved capture.",
+    "cadence": "Hourly fleet capture · Daily network check",
+    "probes": [
+      {
+        "label": "Fleet captured",
+        "url": "https://coolcode.ca/translink/data/status.json",
+        "path": ["captured"],
+        "count_at": { "path": ["buses"], "unit": "buses out" }
+      },
+      {
+        "label": "Network",
+        "url": "https://coolcode.ca/translink/data/network-status.json",
+        "path": ["retrieved"],
+        "end_path": ["feedEnd"]
+      }
+    ]
   }
 }

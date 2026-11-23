@@ -11,24 +11,68 @@
 </head>
 <body data-tool-id="{{TOOL_ID}}">
   <a class="skip" href="#main">Skip to content</a>
-  <header><a href="https://coolcode.ca/">← CoolCode.ca</a><a href="{{SOURCE_URL}}">Source &amp; instructions ↗</a></header>
+  <header>
+    <a href="https://coolcode.ca/">← CoolCode.ca</a>
+    <a href="{{SOURCE_URL}}">Source & instructions ↗</a>
+  </header>
   <main id="main">
-    <p class="eyebrow">Browser tool starter</p>
+    <p class="eyebrow">Metro Vancouver · saved captures</p>
     <h1>{{TITLE}}</h1>
     <p class="intro">{{DESCRIPTION}}</p>
-    <section aria-labelledby="example-title">
-      <h2 id="example-title">Clean a list</h2>
-      <p>Trim spaces, skip blank lines and remove exact duplicates. Capitalization stays distinct.</p>
-      <div class="panels">
-        <div><label for="input">Your lines</label><textarea id="input" rows="10" maxlength="100000" spellcheck="false" placeholder="Paste one item per line"></textarea></div>
-        <div><label for="output">Cleaned lines</label><textarea id="output" rows="10" readonly spellcheck="false"></textarea></div>
+    <p id="banner" class="banner" hidden>Illustrated capture. These vehicles are not a TransLink reading. A refresh replaces them with the GTFS-Realtime feed.</p>
+    <section aria-labelledby="sheet-title">
+      <h2 id="sheet-title">The sheet</h2>
+      <p id="edition" class="edition">Loading saved captures.</p>
+      <div class="filters">
+        <label>Capture<select id="capture"></select></label>
+        <label>Route<input id="route" name="route" list="route-names" maxlength="48" autocomplete="off" spellcheck="false" enterkeyhint="search"></label>
+        <label>Compare with<select id="earlier"></select></label>
       </div>
-      <div class="actions"><button id="sample" type="button">Load example</button><button id="clear" type="button">Clear</button><button id="copy" type="button" hidden>Copy result</button></div>
-      <p id="status" role="status" aria-live="polite">Paste a list to begin.</p>
-      <noscript><p>This tool needs JavaScript to process your text. The source is available above.</p></noscript>
+      <datalist id="route-names"></datalist>
+      <div id="chips" class="chips"></div>
+      <p id="finding" class="finding" role="status">Loading saved captures.</p>
+      <dl class="stats">
+        <div><dt>Buses on this route</dt><dd id="stat-buses">—</dd></div>
+        <div><dt>Closest pair</dt><dd id="stat-gap">—</dd></div>
+        <div><dt>Median delay</dt><dd id="stat-delay">—</dd></div>
+        <div><dt>Cancelled trips</dt><dd id="stat-cancel">—</dd></div>
+      </dl>
+      <div class="map-head">
+        <p class="note">Dots are vehicles in the selected capture. The line is the saved route shape, not a live trace.</p>
+        <button id="frame" type="button">Whole region</button>
+      </div>
+      <div class="map-frame"><svg id="map" role="img" aria-label="Vehicle positions for the selected route"></svg></div>
+      <div id="tracks"></div>
+      <div class="scroll">
+        <table>
+          <caption>Vehicles on the selected route</caption>
+          <thead>
+            <tr><th>Vehicle</th><th>Towards</th><th>Along</th><th>Gap ahead</th><th>Delay</th><th>Speed</th><th>Ping</th></tr>
+          </thead>
+          <tbody id="rows"></tbody>
+        </table>
+      </div>
+      <h3>Alerts for this route</h3>
+      <ul id="alerts"></ul>
     </section>
-    <aside aria-label="Privacy"><strong>Stays on your device.</strong> The browser processes your text in this tab. Reloading clears it.</aside>
+    <section aria-labelledby="change-title">
+      <h2 id="change-title">Since an earlier capture</h2>
+      <p id="compare"></p>
+      <div class="scroll">
+        <table>
+          <caption>Change in buses reporting</caption>
+          <thead><tr><th>Route</th><th>Earlier</th><th>This capture</th><th>Change</th></tr></thead>
+          <tbody id="deltas"></tbody>
+        </table>
+      </div>
+    </section>
+    <aside aria-label="Privacy"><strong>The page stays in this tab.</strong> Choosing a route does not leave the browser. The API key is used only while a snapshot is collected, and it is not part of this page.</aside>
+    <noscript><p>This tool needs JavaScript to read the saved captures. The source is linked above.</p></noscript>
   </main>
-  <footer>Part of <a href="https://coolcode.ca/">the CoolCode collection</a>. {{ISSUE_LINK}}</footer>
+  <footer>
+    <p>Part of <a href="https://coolcode.ca/">the CoolCode collection</a>. {{ISSUE_LINK}}</p>
+    <p>Positions, delays and alerts come from TransLink GTFS-Realtime. Route names and lines come from the static GTFS schedule. <a href="https://www.translink.ca/about-us/doing-business-with-translink/app-developer-resources/gtfs/gtfs-realtime">GTFS-Realtime reference ↗</a></p>
+    <p>Route and arrival data used in this product or service is provided by permission of TransLink. TransLink assumes no responsibility for the accuracy or currency of the Data used in this product or service.</p>
+  </footer>
 </body>
 </html>

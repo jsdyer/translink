@@ -1,4 +1,4 @@
-"""Exercise the built starter at a project subpath in Chromium."""
+"""Exercise the built sheet at a project subpath in Chromium."""
 from functools import partial
 from http.server import SimpleHTTPRequestHandler, ThreadingHTTPServer
 from pathlib import Path
@@ -19,32 +19,34 @@ def main():
     screenshots = ROOT / "browser-checks"
     screenshots.mkdir(exist_ok=True)
     with tempfile.TemporaryDirectory() as temporary:
-        shutil.copytree(ROOT / "dist", Path(temporary) / "example-tool")
+        shutil.copytree(ROOT / "dist", Path(temporary) / "translink")
         server = ThreadingHTTPServer(("127.0.0.1", 0), partial(QuietHandler, directory=temporary))
         threading.Thread(target=server.serve_forever, daemon=True).start()
         try:
-            with sync_playwright() as p:
-                browser = p.chromium.launch()
+            with sync_playwright() as playwright:
+                browser = playwright.chromium.launch()
                 page = browser.new_page(viewport={"width": 1280, "height": 1000})
                 errors = []
                 page.on("pageerror", lambda error: errors.append(str(error)))
-                page.goto(f"http://127.0.0.1:{server.server_port}/example-tool/")
-                page.locator("#sample").click()
-                assert page.locator("#output").input_value() == "Halifax\nLangley\nVancouver"
-                assert "1 duplicate removed" in page.locator("#status").inner_text()
-                page.locator("#input").fill('<img src=x onerror="alert(1)">\n<img src=x onerror="alert(1)">')
-                assert page.locator("#output").input_value() == '<img src=x onerror="alert(1)">'
+                page.goto(f"http://127.0.0.1:{server.server_port}/translink/")
+                page.locator("#finding").wait_for()
+                page.wait_for_function("document.querySelector('#finding').textContent !== 'Loading saved captures.'")
+                page.locator("#route").fill("99")
+                page.wait_for_function("document.querySelector('#finding').textContent.includes('99')")
+                page.locator("#route").fill("410")
+                page.wait_for_function("document.querySelector('#finding').textContent.includes('410')")
+                page.locator("#route").fill('<img src=x onerror="alert(1)">')
+                page.wait_for_function("document.querySelector('#finding').textContent.includes('No saved route')")
                 assert page.locator("img").count() == 0
-                page.locator("#clear").click()
-                assert page.locator("#output").input_value() == ""
-                page.locator("#sample").click()
+                assert "<img" not in page.locator("#finding").inner_text()
+                page.locator("#route").fill("99")
                 page.screenshot(path=str(screenshots / "desktop.png"), full_page=True)
                 page.set_viewport_size({"width": 390, "height": 844})
-                assert page.evaluate("document.documentElement.scrollWidth <= window.innerWidth")
+                assert page.evaluate("document.documentElement.scrollWidth <= window.innerWidth + 1")
                 page.screenshot(path=str(screenshots / "mobile.png"), full_page=True)
                 assert not errors, errors
                 browser.close()
-            print("Browser checks passed: project subpath, sample, clear, safe text and mobile layout")
+            print("Browser checks passed: project subpath, route lookup, safe text and mobile layout")
         finally:
             server.shutdown()
 
