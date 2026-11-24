@@ -49,3 +49,15 @@ python3 scripts/build.py
 ```
 
 Illustrated captures, written by `python3 scripts/illustrate.py`, are removed automatically when the first live capture is published.
+
+<!-- schedule-reliability -->
+## Schedule reliability
+
+Public GitHub repositories can have scheduled workflows disabled after 60 days of inactivity. A separate weekly [schedule guard](.github/workflows/schedule-guard.yml) calls GitHub's enable-workflow API for an explicit list of refresh workflows and itself. It can restore workflows disabled for inactivity, preserves manually disabled workflows, and runs independently of collection failures.
+
+This is an interim mitigation, not a scheduling guarantee: GitHub does not document active-workflow renewal as a permanent exemption, and scheduled runs can be delayed or dropped. The [GitHub-managed watchdog](https://github.com/jsdyer/jsdyer.github.io/tree/main/services/refresh-watchdog) provides an independent trigger once installed on our Linux server. The guard does not collect data, create dummy commits, or change source/check timestamps; successful collection and published data freshness still need monitoring.
+<!-- /schedule-reliability -->
+
+## Catalogue and operations
+
+Fleet Sheet is registered in the CoolCode catalogue, generated visitor Worker list, sitemap and independent watchdog registry. Follow the [mandatory tool lifecycle](https://github.com/jsdyer/jsdyer.github.io/blob/main/docs/tool-lifecycle.md) when changing its routes, schedules, metadata or behaviour. The hourly fleet workflow also refreshes network metadata; there is no separate daily workflow.
